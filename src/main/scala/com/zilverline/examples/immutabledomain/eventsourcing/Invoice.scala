@@ -2,20 +2,6 @@ package com.zilverline.examples.immutabledomain.eventsourcing
 
 import org.joda.time.LocalDate
 
-case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
-
-trait InvoiceEvent {
-  val invoiceId: Int
-}
-
-case class InvoiceCreated(invoiceId: Int) extends InvoiceEvent
-case class InvoiceRecipientChanged(invoiceId: Int, recipient: Option[String]) extends InvoiceEvent
-case class InvoiceItemAdded(invoiceId: Int, item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
-case class InvoiceItemRemoved(invoiceId: Int, item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
-case class InvoiceSent(invoiceId: Int, sentDate: LocalDate, dueDate: LocalDate) extends InvoiceEvent
-case class InvoicePaid(invoiceId: Int, paymentDate: LocalDate) extends InvoiceEvent
-case class InvoiceReminderSent(invoiceId: Int, reminderDate: LocalDate) extends InvoiceEvent
-
 class Invoice extends AggregateRoot[InvoiceEvent] {
   private var _id: Int = _
 

@@ -7,3 +7,6 @@ project/boot/
 *.iws
 .idea
 out
+.classpath
+.settings
+.project

@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>Lets Work</name>
+    <name>Immutable Domain</name>
     <groupId>com.zilverline</groupId>
     <artifactId>zilverline-immutable-domain-example</artifactId>
     <version>0.1-SNAPSHOT</version>
@@ -95,6 +95,17 @@
             <artifactId>joda-time</artifactId>
             <version>1.6.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.squeryl</groupId>
+            <artifactId>squeryl_2.8.1</artifactId>
+            <version>0.9.4-RC3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.3.149</version>
+        </dependency>
+
         <dependency>
             <groupId>net.liftweb</groupId>
             <artifactId>lift-json_${scala.version}</artifactId>
