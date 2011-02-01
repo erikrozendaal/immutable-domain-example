@@ -2,8 +2,11 @@ package com.zilverline.examples.immutabledomain.eventsourcing
 
 import org.specs.Specification
 import org.joda.time.{DateTimeUtils, LocalDate}
+import org.specs.runner.JUnit4
 
-class EventSourcedInvoiceSpec extends Specification {
+class EventSourcedInvoiceTest extends JUnit4(EventSourcedInvoiceSpec)
+
+object EventSourcedInvoiceSpec extends Specification {
 
   doBeforeSpec {
     DateTimeUtils.setCurrentMillisFixed(new LocalDate(2011, 1, 29).toDateTimeAtCurrentTime.getMillis)

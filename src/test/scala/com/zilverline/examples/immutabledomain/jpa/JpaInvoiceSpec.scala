@@ -5,8 +5,11 @@ import JpaSupport._
 import javax.persistence.PersistenceException
 import java.math.BigDecimal
 import org.joda.time.{DateTimeUtils, LocalDate}
+import org.specs.runner.JUnit4
 
-class JpaInvoiceSpec extends Specification {
+class JpaInvoiceTest extends JUnit4(JpaInvoiceSpec)
+
+object JpaInvoiceSpec extends Specification {
 
   implicit val emf = JpaSupport.entityManagerFactory
   implicit def string2BigDecimal(amount: String) = new BigDecimal(amount)
