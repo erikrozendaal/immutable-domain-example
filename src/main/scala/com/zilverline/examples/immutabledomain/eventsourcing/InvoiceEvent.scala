@@ -13,5 +13,5 @@ case class InvoiceRecipientChanged(invoiceId: Int, recipient: Option[String]) ex
 case class InvoiceItemAdded(invoiceId: Int, item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
 case class InvoiceItemRemoved(invoiceId: Int, item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
 case class InvoiceSent(invoiceId: Int, sentDate: LocalDate, dueDate: LocalDate) extends InvoiceEvent
-case class InvoicePaid(invoiceId: Int, paymentDate: LocalDate) extends InvoiceEvent
 case class InvoiceReminderSent(invoiceId: Int, reminderDate: LocalDate) extends InvoiceEvent
+case class InvoicePaymentReceived(invoiceId: Int, paymentDate: LocalDate) extends InvoiceEvent

@@ -53,7 +53,7 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
   def pay {
     require(sent_?, "invoice cannot be paid before sending")
     require(!paid_?, "invoice already paid")
-    record(InvoicePaid(_id, new LocalDate))
+    record(InvoicePaymentReceived(_id, new LocalDate))
   }
 
   def late_? = readyToPay_? && _dueDate.get.isBefore(new LocalDate)
@@ -86,7 +86,7 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
     case InvoiceSent(_, sentDate, dueDate) =>
       _sentDate = Some(sentDate)
       _dueDate = Some(dueDate)
-    case InvoicePaid(_, paymentDate) =>
+    case InvoicePaymentReceived(_, paymentDate) =>
       _paymentDate = Some(paymentDate)
     case InvoiceReminderSent(_, _) =>
   }

@@ -16,8 +16,16 @@ class InvoiceReport(
   def this() = this (-1, Some(""), 0, Some(new Date), Some(new Date), Some(new Date), Some(new Date))
 }
 
+class InvoiceItemReport(
+                         val invoiceId: Int,
+                         val itemId: Int,
+                         val description: String,
+                         val amount: BigDecimal)
+
 object InvoiceReport extends Schema {
   val invoices = table[InvoiceReport]
+
+  val invoiceItems = table[InvoiceItemReport]
 
   def handleEvent(event: InvoiceEvent) = inTransaction {
     Session.currentSession.setLogger(msg => println(msg))
@@ -28,8 +36,26 @@ object InvoiceReport extends Schema {
         update(invoices) {s => where(s.id === event.invoiceId).set(s.recipient := event.recipient)}
       case event: InvoiceItemAdded =>
         update(invoices) {s => where(s.id === event.invoiceId).set(s.totalAmount := event.totalAmount)}
+        invoiceItems.insert(new InvoiceItemReport(event.invoiceId, event.item.id, event.item.description, event.item.amount))
       case event: InvoiceItemRemoved =>
         update(invoices) {s => where(s.id === event.invoiceId).set(s.totalAmount := event.totalAmount)}
+        invoiceItems.deleteWhere {item => item.invoiceId === event.invoiceId and item.itemId === event.item.id}
+      case event: InvoiceSent =>
+        update(invoices) {invoice =>
+          where(invoice.id === event.invoiceId).set(
+            invoice.sentDate := Some(event.sentDate.toDateTimeAtStartOfDay.toDate),
+            invoice.dueDate := Some(event.dueDate.toDateTimeAtStartOfDay.toDate))
+        }
+      case event: InvoiceReminderSent =>
+        update(invoices) {invoice =>
+          where(invoice.id === event.invoiceId)
+            .set(invoice.reminderDate := Some(event.reminderDate.toDateTimeAtStartOfDay.toDate))
+        }
+      case event: InvoicePaymentReceived =>
+        update(invoices) {invoice =>
+          where(invoice.id === event.invoiceId)
+            .set(invoice.paymentDate := Some(event.paymentDate.toDateTimeAtStartOfDay.toDate))
+        }
     }
   }
 

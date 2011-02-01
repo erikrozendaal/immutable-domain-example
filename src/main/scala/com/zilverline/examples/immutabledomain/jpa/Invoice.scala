@@ -99,6 +99,13 @@ class Invoice {
     _dueDate = now.plusDays(14).toDateTimeAtStartOfDay.toDate
   }
 
+  def late_? = readyForPayment_? && _dueDate.getTime < DateTimeUtils.currentTimeMillis
+
+  def remind {
+    require(late_?, "invoice must be late for reminder")
+    _reminderDate = new LocalDate().toDateTimeAtStartOfDay.toDate
+  }
+
   def readyForPayment_? = sent_? && !paid_?
 
   def paid_? = _paymentDate != null
@@ -108,13 +115,6 @@ class Invoice {
     require(!paid_?, "invoice already paid")
     val now = new LocalDate
     _paymentDate = now.toDateTimeAtStartOfDay.toDate
-  }
-
-  def late_? = readyForPayment_? && _dueDate.getTime < DateTimeUtils.currentTimeMillis
-
-  def remind {
-    require(late_?, "invoice must be late for reminder")
-    _reminderDate = new LocalDate().toDateTimeAtStartOfDay.toDate
   }
 
   def sentDate = if (_sentDate == null) null else new LocalDate(_sentDate)
