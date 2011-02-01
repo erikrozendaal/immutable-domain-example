@@ -1,4 +1,4 @@
-package com.zilverline.examples.immutabledomain.eventsourcing
+package com.zilverline.examples.immutabledomain.scrapbook
 
 import org.squeryl._
 import adapters.H2Adapter
@@ -12,6 +12,6 @@ object SquerylSupport {
       new H2Adapter))
 
   PrimitiveTypeMode.using(SessionFactory.newSession) {
-    InvoiceReport.create
+    //InvoiceReport.create
   }
 }
