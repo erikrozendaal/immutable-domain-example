@@ -1,20 +1,20 @@
 package com.zilverline.examples.immutabledomain.eventsourcing
 
-import collection.mutable.Queue
+import scala.collection._
 
-trait AggregateRoot[T] {
-  protected def applyEvent: T => Unit
+trait AggregateRoot[Event] {
+  protected def applyEvent: Event => Unit
 
-  def uncommittedEvents: Iterable[T] = _uncommittedEvents
+  def uncommittedEvents: Iterable[Event] = _uncommittedEvents
 
   def markCommitted = _uncommittedEvents.clear
 
-  def loadFromHistory(history: Traversable[T]) = history foreach applyEvent
+  def loadFromHistory(history: Traversable[Event]) = history.foreach(applyEvent)
 
-  protected def record(event: T) {
+  protected def record(event: Event) {
     applyEvent(event)
     _uncommittedEvents += event
   }
 
-  private val _uncommittedEvents = Queue[T]()
+  private val _uncommittedEvents = mutable.Queue[Event]()
 }

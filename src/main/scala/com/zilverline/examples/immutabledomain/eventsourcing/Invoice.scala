@@ -3,19 +3,19 @@ package com.zilverline.examples.immutabledomain.eventsourcing
 import org.joda.time.LocalDate
 
 class Invoice extends AggregateRoot[InvoiceEvent] {
-  private var _id: Int = _
+  private var id: Int = _
 
-  private var _recipient: Option[String] = None
+  private var recipient_? = false
 
-  private var _nextItemId = 1
+  private var nextItemId = 1
 
-  private var _items: Map[Int, InvoiceItem] = Map.empty
+  private var items: Map[Int, InvoiceItem] = Map.empty
 
-  private var _sentDate: Option[LocalDate] = None
+  private var sent_?  = false
 
-  private var _dueDate: Option[LocalDate] = None
+  private var paid_? = false
 
-  private var _paymentDate: Option[LocalDate] = None
+  private var dueDate: Option[LocalDate] = None
 
   def this(id: Int) {
     this()
@@ -24,20 +24,24 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
 
   def changeRecipient(recipient: Option[String]) {
     require(!sent_?, "recipient cannot be changed after invoice is sent")
-    record(InvoiceRecipientChanged(_id, recipient.map(_.trim).filter(!_.isEmpty)))
+    record(InvoiceRecipientChanged(id, recipient.map(_.trim).filter(!_.isEmpty)))
   }
 
   def addItem(description: String, amount: BigDecimal) {
     require(!sent_?, "item cannot be added after invoice is sent")
-    val item = InvoiceItem(_nextItemId, description, amount)
-    record(InvoiceItemAdded(_id, item, totalAmount + amount))
+    val item = InvoiceItem(nextItemId, description, amount)
+    record(InvoiceItemAdded(id, item, totalAmount + amount))
   }
 
   def removeItem(itemId: Int) {
     require(!sent_?, "item cannot be removed after invoice is sent")
-    val item = _items(itemId)
-    record(InvoiceItemRemoved(_id, item, totalAmount - item.amount))
+    val item = items(itemId)
+    record(InvoiceItemRemoved(id, item, totalAmount - item.amount))
   }
+
+  private def totalAmount = items.values.map(_.amount).sum
+
+  private def items_? = items.nonEmpty
 
   def readyToSend_? = recipient_? && items_? && !sent_?
 
@@ -45,7 +49,7 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
     require(!sent_?, "invoice already sent")
     require(readyToSend_?, "recipient and items must be specified before sending")
     val now = new LocalDate
-    record(InvoiceSent(_id, sentDate = now, dueDate = now.plusDays(14)))
+    record(InvoiceSent(id, sentDate = now, dueDate = now.plusDays(14)))
   }
 
   def readyToPay_? = sent_? && !paid_?
@@ -53,41 +57,31 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
   def pay {
     require(sent_?, "invoice cannot be paid before sending")
     require(!paid_?, "invoice already paid")
-    record(InvoicePaymentReceived(_id, new LocalDate))
+    record(InvoicePaymentReceived(id, new LocalDate))
   }
 
-  def late_? = readyToPay_? && _dueDate.get.isBefore(new LocalDate)
+  def late_? = readyToPay_? && dueDate.get.isBefore(new LocalDate)
 
   def remind {
     require(late_?, "invoice must be late for reminder")
-    record(InvoiceReminderSent(_id, new LocalDate))
+    record(InvoiceReminderSent(id, new LocalDate))
   }
 
-  private def totalAmount = _items.values.map(_.amount).sum
-
-  private def recipient_? = _recipient.isDefined
-
-  private def items_? = _items.nonEmpty
-
-  private def sent_? = _sentDate.isDefined
-
-  private def paid_? = _paymentDate.isDefined
-
   protected def applyEvent = {
-    case InvoiceCreated(invoiceId) =>
-      _id = invoiceId
-    case InvoiceRecipientChanged(_, recipient) =>
-      _recipient = recipient
-    case InvoiceItemAdded(_, item, totalAmount) =>
-      _items += item.id -> item
-      _nextItemId += 1
-    case InvoiceItemRemoved(_, item, totalAmount) =>
-      _items -= item.id
-    case InvoiceSent(_, sentDate, dueDate) =>
-      _sentDate = Some(sentDate)
-      _dueDate = Some(dueDate)
-    case InvoicePaymentReceived(_, paymentDate) =>
-      _paymentDate = Some(paymentDate)
-    case InvoiceReminderSent(_, _) =>
+    case event: InvoiceCreated =>
+      id = event.invoiceId
+    case event: InvoiceRecipientChanged =>
+      recipient_? = event.recipient.isDefined
+    case event: InvoiceItemAdded =>
+      items += event.item.id -> event.item
+      nextItemId += 1
+    case event: InvoiceItemRemoved =>
+      items -= event.item.id
+    case event: InvoiceSent =>
+      sent_? = true
+      dueDate = Some(event.dueDate)
+    case event: InvoicePaymentReceived =>
+      paid_? = true
+    case event: InvoiceReminderSent =>
   }
 }
