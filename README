@@ -3,3 +3,4 @@ Examples of immutable domain models in Scala using event sourcing.
 See blog posts at blog.zilverline.com:
 
 Part 1: http://blog.zilverline.com/?p=136
+Part 2: http://blog.zilverline.com/?p=200
