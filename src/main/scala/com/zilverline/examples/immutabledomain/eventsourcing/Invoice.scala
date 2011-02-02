@@ -11,7 +11,7 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
 
   private var items: Map[Int, InvoiceItem] = Map.empty
 
-  private var sent_?  = false
+  private var sent_? = false
 
   private var paid_? = false
 

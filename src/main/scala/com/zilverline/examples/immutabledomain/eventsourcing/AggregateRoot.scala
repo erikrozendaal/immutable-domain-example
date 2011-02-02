@@ -9,7 +9,7 @@ trait AggregateRoot[Event] {
 
   def markCommitted = _uncommittedEvents.clear
 
-  def loadFromHistory(history: Traversable[Event]) = history.foreach(applyEvent)
+  def loadFromHistory(history: Iterable[Event]) = history.foreach(applyEvent)
 
   protected def record(event: Event) {
     applyEvent(event)

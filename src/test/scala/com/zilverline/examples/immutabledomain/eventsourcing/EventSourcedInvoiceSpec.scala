@@ -24,6 +24,23 @@ object EventSourcedInvoiceSpec extends Specification {
     }
   }
 
+  "ready to send invoice" should {
+    "generate invoice sent event" in {
+      val invoice = new Invoice
+      invoice.loadFromHistory(Seq(
+        InvoiceCreated(1),
+        InvoiceRecipientChanged(1, Some("Erik")),
+        InvoiceItemAdded(1, InvoiceItem(1, "Food", 2.95), 2.95)))
+
+      invoice.send
+
+      invoice.uncommittedEvents must contain(
+        InvoiceSent(1,
+          sentDate = new LocalDate(2011, 1, 29),
+          dueDate = new LocalDate(2011, 2, 12)))
+    }
+  }
+
   "draft invoice" should {
     val invoice = new Invoice
     invoice.loadFromHistory(Seq(InvoiceCreated(1)))
