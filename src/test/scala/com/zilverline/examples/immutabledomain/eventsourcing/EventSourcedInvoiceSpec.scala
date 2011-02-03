@@ -18,10 +18,27 @@ object EventSourcedInvoiceSpec extends Specification {
 
   implicit def string2BigDecimal(amount: String) = BigDecimal(amount)
 
+  "invoice loaded from history" should {
+    val invoice = new Invoice
+    invoice.loadFromHistory(Seq(
+      InvoiceCreated(2),
+      InvoiceRecipientChanged(2, Some("Erik"))))
+
+    "have no uncommitted events" in {
+      invoice.uncommittedEvents must beEmpty
+    }
+  }
+
   "new invoice" should {
     val invoice = new Invoice(1)
     "be created" in {
       invoice.uncommittedEvents must contain(InvoiceCreated(1))
+    }
+
+    "clear uncommitted events" in {
+      invoice.markCommitted
+
+      invoice.uncommittedEvents must beEmpty
     }
   }
 
