@@ -1,42 +1,45 @@
 package com.zilverline.examples.immutabledomain.immutable
 
 import org.joda.time.LocalDate
+import com.zilverline.examples.immutabledomain.events._
 
-class Invoice extends AggregateRoot[InvoiceEvent] {
-  private var id: Int = _
+object Invoice extends AggregateFactory[Invoice, InvoiceEvent] {
+  def create(id: Int) = applyCreationEvent(InvoiceCreated(id))
 
-  private var recipient_? = false
-
-  private var nextItemId = 1
-
-  private var items: Map[Int, InvoiceItem] = Map.empty
-
-  private var sent_? = false
-
-  private var paid_? = false
-
-  private var dueDate: Option[LocalDate] = None
-
-  def this(id: Int) {
-    this()
-    record(InvoiceCreated(id))
+  protected def applyCreationEvent: InvoiceEvent => Invoice = {
+    case event: InvoiceCreated => Invoice(event :: Nil, event.invoiceId)
+    case event => error("unexpected event " + event)
   }
+}
 
-  def changeRecipient(recipient: Option[String]) {
+case class Invoice private (
+                    uncommittedEvents: List[InvoiceEvent],
+                    id: Int,
+                    recipient_? : Boolean = false,
+                    nextItemId: Int = 1,
+                    items: Map[Int, InvoiceItem] = Map.empty,
+                    sent_? : Boolean = false,
+                    paid_? : Boolean = false,
+                    dueDate: Option[LocalDate] = None)
+  extends AggregateRoot[Invoice, InvoiceEvent] {
+
+  type Event = InvoiceEvent
+
+  def changeRecipient(recipient: Option[String]) = {
     require(!sent_?, "recipient cannot be changed after invoice is sent")
-    record(InvoiceRecipientChanged(id, recipient.map(_.trim).filter(!_.isEmpty)))
+    applyEvent(InvoiceRecipientChanged(id, recipient.map(_.trim).filter(!_.isEmpty)))
   }
 
-  def addItem(description: String, amount: BigDecimal) {
+  def addItem(description: String, amount: BigDecimal) = {
     require(!sent_?, "item cannot be added after invoice is sent")
     val item = InvoiceItem(nextItemId, description, amount)
-    record(InvoiceItemAdded(id, item, totalAmount + amount))
+    applyEvent(InvoiceItemAdded(id, item, totalAmount + amount))
   }
 
-  def removeItem(itemId: Int) {
+  def removeItem(itemId: Int) = {
     require(!sent_?, "item cannot be removed after invoice is sent")
     val item = items(itemId)
-    record(InvoiceItemRemoved(id, item, totalAmount - item.amount))
+    applyEvent(InvoiceItemRemoved(id, item, totalAmount - item.amount))
   }
 
   private def totalAmount = items.values.map(_.amount).sum
@@ -45,43 +48,46 @@ class Invoice extends AggregateRoot[InvoiceEvent] {
 
   def readyToSend_? = recipient_? && items_? && !sent_?
 
-  def send {
+  def send = {
     require(!sent_?, "invoice already sent")
     require(readyToSend_?, "recipient and items must be specified before sending")
     val now = new LocalDate
-    record(InvoiceSent(id, sentDate = now, dueDate = now.plusDays(14)))
+    applyEvent(InvoiceSent(id, sentDate = now, dueDate = now.plusDays(14)))
   }
 
   def readyToPay_? = sent_? && !paid_?
 
-  def pay {
+  def pay = {
     require(sent_?, "invoice cannot be paid before sending")
     require(!paid_?, "invoice already paid")
-    record(InvoicePaymentReceived(id, new LocalDate))
+    applyEvent(InvoicePaymentReceived(id, new LocalDate))
   }
 
   def late_? = readyToPay_? && dueDate.get.isBefore(new LocalDate)
 
-  def remind {
+  def remind = {
     require(late_?, "invoice must be late for reminder")
-    record(InvoiceReminderSent(id, new LocalDate))
+    applyEvent(InvoiceReminderSent(id, new LocalDate))
   }
 
-  protected def applyEvent = {
+  def markCommitted = copy(uncommittedEvents = Nil)
+
+  def applyEvent: InvoiceEvent => Invoice = {
     case event: InvoiceCreated =>
-      id = event.invoiceId
+      copy(event :: uncommittedEvents, id = event.invoiceId)
     case event: InvoiceRecipientChanged =>
-      recipient_? = event.recipient.isDefined
+      copy(event :: uncommittedEvents, recipient_? = event.recipient.isDefined)
     case event: InvoiceItemAdded =>
-      items += event.item.id -> event.item
-      nextItemId += 1
+      copy(event :: uncommittedEvents,
+        items = items + (event.item.id -> event.item),
+        nextItemId = nextItemId + 1)
     case event: InvoiceItemRemoved =>
-      items -= event.item.id
+      copy(event :: uncommittedEvents, items = items - event.item.id)
     case event: InvoiceSent =>
-      sent_? = true
-      dueDate = Some(event.dueDate)
+      copy(event :: uncommittedEvents, sent_? = true, dueDate = Some(event.dueDate))
     case event: InvoicePaymentReceived =>
-      paid_? = true
+      copy(event :: uncommittedEvents, paid_? = true)
     case event: InvoiceReminderSent =>
+      copy(event :: uncommittedEvents)
   }
 }
