@@ -1,7 +1,8 @@
-package com.zilverline.examples.immutabledomain.eventsourcing
+package com.zilverline.examples.immutabledomain.reports
 
 import org.joda.time.LocalDate
 import collection.immutable.SortedMap
+import com.zilverline.examples.immutabledomain.events._
 
 case class InvoiceReport(
                           id: Int,

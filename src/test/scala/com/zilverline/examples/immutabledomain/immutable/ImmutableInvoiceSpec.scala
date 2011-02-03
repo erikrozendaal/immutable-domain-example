@@ -1,4 +1,4 @@
-package com.zilverline.examples.immutabledomain.eventsourcing
+package com.zilverline.examples.immutabledomain.immutable
 
 import org.specs.Specification
 import org.joda.time.{DateTimeUtils, LocalDate}
@@ -124,6 +124,26 @@ object EventSourcedInvoiceSpec extends Specification {
       invoice.remind
 
       invoice.uncommittedEvents must contain(InvoiceReminderSent(1, new LocalDate(2011, 2, 20)))
+    }
+  }
+
+  "invoice report" should {
+    "track invoice changes" in {
+      val subject = InvoiceReport
+        .handleEvent(InvoiceCreated(17))
+        .handleEvent(InvoiceRecipientChanged(17, Some("Erik")))
+        .handleEvent(InvoiceItemAdded(17, InvoiceItem(1, "Food", 2.95), 2.95))
+        .handleEvent(InvoiceSent(17, new LocalDate(2011, 1, 5), new LocalDate(2011, 1, 19)))
+        .handleEvent(InvoiceReminderSent(17, new LocalDate(2011, 1, 21)))
+        .handleEvent(InvoicePaymentReceived(17, new LocalDate(2011, 1, 25)))
+
+      subject.id must beEqualTo(17)
+      subject.recipient must beEqualTo(Some("Erik"))
+      subject.items.values must contain(InvoiceItem(1, "Food", 2.95))
+      subject.sentDate must beEqualTo(Some(new LocalDate(2011, 1, 5)))
+      subject.dueDate must beEqualTo(Some(new LocalDate(2011, 1, 19)))
+      subject.reminderDates must beEqualTo(List(new LocalDate(2011, 1, 21)))
+      subject.paymentDate must beEqualTo(Some(new LocalDate(2011, 1, 25)))
     }
   }
 

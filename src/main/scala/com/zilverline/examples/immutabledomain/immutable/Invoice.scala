@@ -1,7 +1,6 @@
-package com.zilverline.examples.immutabledomain.eventsourcing
+package com.zilverline.examples.immutabledomain.immutable
 
 import org.joda.time.LocalDate
-import com.zilverline.examples.immutabledomain.events._
 
 class Invoice extends AggregateRoot[InvoiceEvent] {
   private var id: Int = _

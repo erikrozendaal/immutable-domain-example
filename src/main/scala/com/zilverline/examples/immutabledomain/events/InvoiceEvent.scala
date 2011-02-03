@@ -1,4 +1,4 @@
-package com.zilverline.examples.immutabledomain.eventsourcing
+package com.zilverline.examples.immutabledomain.events
 
 import org.joda.time.LocalDate
 
