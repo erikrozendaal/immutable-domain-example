@@ -13,17 +13,15 @@ object Invoice extends AggregateFactory[Invoice, InvoiceEvent] {
 }
 
 case class Invoice private (
-                    uncommittedEvents: List[InvoiceEvent],
-                    id: Int,
-                    recipient_? : Boolean = false,
-                    nextItemId: Int = 1,
-                    items: Map[Int, InvoiceItem] = Map.empty,
-                    sent_? : Boolean = false,
-                    paid_? : Boolean = false,
-                    dueDate: Option[LocalDate] = None)
+                             uncommittedEvents: List[InvoiceEvent],
+                             id: Int,
+                             recipient_? : Boolean = false,
+                             nextItemId: Int = 1,
+                             items: Map[Int, InvoiceItem] = Map.empty,
+                             sent_? : Boolean = false,
+                             paid_? : Boolean = false,
+                             dueDate: Option[LocalDate] = None)
   extends AggregateRoot[Invoice, InvoiceEvent] {
-
-  type Event = InvoiceEvent
 
   def changeRecipient(recipient: Option[String]) = {
     require(!sent_?, "recipient cannot be changed after invoice is sent")
@@ -73,8 +71,6 @@ case class Invoice private (
   def markCommitted = copy(uncommittedEvents = Nil)
 
   def applyEvent: InvoiceEvent => Invoice = {
-    case event: InvoiceCreated =>
-      copy(event :: uncommittedEvents, id = event.invoiceId)
     case event: InvoiceRecipientChanged =>
       copy(event :: uncommittedEvents, recipient_? = event.recipient.isDefined)
     case event: InvoiceItemAdded =>
@@ -89,5 +85,8 @@ case class Invoice private (
       copy(event :: uncommittedEvents, paid_? = true)
     case event: InvoiceReminderSent =>
       copy(event :: uncommittedEvents)
+    case event: InvoiceCreated =>
+      error("unexpected event " + event)
   }
+
 }
