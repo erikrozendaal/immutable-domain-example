@@ -1,18 +1,20 @@
 package com.zilverline.examples.immutabledomain.immutable
 
-trait AggregateRoot[AR <: AggregateRoot[AR, Event], Event] {
-  def applyEvent: Event => AR
+trait EventSourced[ES <: EventSourced[ES, Event], Event] {
+  def applyEvent: Event => ES
 
+  def unhandled(event: Event) = error("event " + event + " does not apply to " + this)
+}
+
+trait AggregateRoot[AR <: AggregateRoot[AR, Event], Event] extends EventSourced[AR, Event] {
   def uncommittedEvents: List[Event]
 
   def markCommitted: AR
 }
 
-trait AggregateFactory[AR <: AggregateRoot[AR, Event], Event] {
-  protected def applyCreationEvent: Event => AR
-
+trait AggregateFactory[AR <: AggregateRoot[AR, Event], Event] extends EventSourced[AR, Event] {
   def loadFromHistory(history: Iterable[Event]): AR = {
-    val aggregate = applyCreationEvent(history.head)
+    val aggregate = applyEvent(history.head)
     history.tail.foldLeft(aggregate)(_.applyEvent(_)).markCommitted
   }
 }

@@ -4,11 +4,11 @@ import org.joda.time.LocalDate
 import com.zilverline.examples.immutabledomain.events._
 
 object Invoice extends AggregateFactory[Invoice, InvoiceEvent] {
-  def create(id: Int) = applyCreationEvent(InvoiceCreated(id))
+  def create(id: Int) = applyEvent(InvoiceCreated(id))
 
-  protected def applyCreationEvent: InvoiceEvent => Invoice = {
+  def applyEvent = {
     case event: InvoiceCreated => Invoice(event :: Nil, event.invoiceId)
-    case event => error("unexpected event " + event)
+    case event => unhandled(event)
   }
 }
 
@@ -23,18 +23,18 @@ case class Invoice private (
                              dueDate: Option[LocalDate] = None)
   extends AggregateRoot[Invoice, InvoiceEvent] {
 
-  def changeRecipient(recipient: Option[String]) = {
+  def changeRecipient(recipient: Option[String]): Invoice = {
     require(!sent_?, "recipient cannot be changed after invoice is sent")
     applyEvent(InvoiceRecipientChanged(id, recipient.map(_.trim).filter(!_.isEmpty)))
   }
 
-  def addItem(description: String, amount: BigDecimal) = {
+  def addItem(description: String, amount: BigDecimal): Invoice = {
     require(!sent_?, "item cannot be added after invoice is sent")
     val item = InvoiceItem(nextItemId, description, amount)
     applyEvent(InvoiceItemAdded(id, item, totalAmount + amount))
   }
 
-  def removeItem(itemId: Int) = {
+  def removeItem(itemId: Int): Invoice = {
     require(!sent_?, "item cannot be removed after invoice is sent")
     val item = items(itemId)
     applyEvent(InvoiceItemRemoved(id, item, totalAmount - item.amount))
@@ -46,7 +46,7 @@ case class Invoice private (
 
   def readyToSend_? = recipient_? && items_? && !sent_?
 
-  def send = {
+  def send: Invoice = {
     require(!sent_?, "invoice already sent")
     require(readyToSend_?, "recipient and items must be specified before sending")
     val now = new LocalDate
@@ -55,7 +55,7 @@ case class Invoice private (
 
   def readyToPay_? = sent_? && !paid_?
 
-  def pay = {
+  def pay: Invoice = {
     require(sent_?, "invoice cannot be paid before sending")
     require(!paid_?, "invoice already paid")
     applyEvent(InvoicePaymentReceived(id, new LocalDate))
@@ -63,14 +63,14 @@ case class Invoice private (
 
   def late_? = readyToPay_? && dueDate.get.isBefore(new LocalDate)
 
-  def remind = {
+  def remind: Invoice = {
     require(late_?, "invoice must be late for reminder")
     applyEvent(InvoiceReminderSent(id, new LocalDate))
   }
 
   def markCommitted = copy(uncommittedEvents = Nil)
 
-  def applyEvent: InvoiceEvent => Invoice = {
+  def applyEvent = {
     case event: InvoiceRecipientChanged =>
       copy(event :: uncommittedEvents, recipient_? = event.recipient.isDefined)
     case event: InvoiceItemAdded =>
@@ -86,7 +86,6 @@ case class Invoice private (
     case event: InvoiceReminderSent =>
       copy(event :: uncommittedEvents)
     case event: InvoiceCreated =>
-      error("unexpected event " + event)
+      unhandled(event)
   }
-
 }
