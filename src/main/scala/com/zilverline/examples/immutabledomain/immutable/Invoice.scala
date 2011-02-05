@@ -4,7 +4,7 @@ import org.joda.time.LocalDate
 import com.zilverline.examples.immutabledomain.events._
 
 object Invoice extends AggregateFactory[Invoice, InvoiceEvent] {
-  def create(id: Int) = applyEvent(InvoiceCreated(id))
+  def create(invoiceId: Int) = applyEvent(InvoiceCreated(invoiceId))
 
   def applyEvent = {
     case event: InvoiceCreated => Invoice(event :: Nil, event.invoiceId)
