@@ -2,8 +2,6 @@ package com.zilverline.examples.immutabledomain.immutable
 
 trait EventSourced[ES <: EventSourced[ES, Event], Event] {
   def applyEvent: Event => ES
-
-  def unhandled(event: Event) = error("event " + event + " does not apply to " + this)
 }
 
 trait AggregateRoot[AR <: AggregateRoot[AR, Event], Event] extends EventSourced[AR, Event] {
@@ -14,7 +12,9 @@ trait AggregateRoot[AR <: AggregateRoot[AR, Event], Event] extends EventSourced[
 
 trait AggregateFactory[AR <: AggregateRoot[AR, Event], Event] extends EventSourced[AR, Event] {
   def loadFromHistory(history: Iterable[Event]): AR = {
-    val aggregate = applyEvent(history.head)
-    history.tail.foldLeft(aggregate)(_.applyEvent(_)).markCommitted
+    var aggregate = applyEvent(history.head)
+    for (event <- history.tail)
+      aggregate = aggregate.applyEvent(event)
+    aggregate.markCommitted
   }
 }

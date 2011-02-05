@@ -8,7 +8,6 @@ object Invoice extends AggregateFactory[Invoice, InvoiceEvent] {
 
   def applyEvent = {
     case event: InvoiceCreated => Invoice(event :: Nil, event.invoiceId)
-    case event => unhandled(event)
   }
 }
 
@@ -85,7 +84,5 @@ case class Invoice private (
       copy(event :: uncommittedEvents, paid_? = true)
     case event: InvoiceReminderSent =>
       copy(event :: uncommittedEvents)
-    case event: InvoiceCreated =>
-      unhandled(event)
   }
 }
