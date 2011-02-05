@@ -2,6 +2,8 @@ package com.zilverline.examples.immutabledomain.immutable
 
 trait EventSourced[ES <: EventSourced[ES, Event], Event] {
   def applyEvent: Event => ES
+
+  def unhandled(event: Event) = error("event " + event + " does not apply to " + this)
 }
 
 trait AggregateRoot[AR <: AggregateRoot[AR, Event], Event] extends EventSourced[AR, Event] {
