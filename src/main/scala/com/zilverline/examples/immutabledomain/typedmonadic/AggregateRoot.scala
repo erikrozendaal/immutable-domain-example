@@ -11,7 +11,7 @@ object Behaviors {
     protected def apply(events: List[Any]) = callback(events)
   }
 
-  def accept[A](a: A) = behavior(events => Accepted(events, a))
+  def accept[T](result: T) = behavior(events => Accepted(events, result))
 
   def reject(message: String) = behavior(_ => Rejected(message))
 
