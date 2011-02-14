@@ -25,7 +25,7 @@
             <url>http://scala-tools.org/repo-releases</url>
         </repository>
         <repository>
-            <id>sonatype-nexus-snapshots</id>
+            <id>sonatype-nexus-releases</id>
             <name>Sonatype Nexus Releases</name>
             <url>https://oss.sonatype.org/content/repositories/releases</url>
             <releases>
